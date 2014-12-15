@@ -43,7 +43,7 @@ public abstract class TileAction extends AbstractAction implements ContextAwareA
     private final Tileable defaultTileable;
 
     protected TileAction(Lookup actionContext) {
-        defaultTileable = Tileable.getDefault();
+        defaultTileable = TileUtilities.getDefault();
         tileableResult = actionContext.lookupResult(Tileable.class);
         tileableResult.addLookupListener(WeakListeners.create(LookupListener.class, this, tileableResult));
         TopComponent.Registry registry = WindowManager.getDefault().getRegistry();
