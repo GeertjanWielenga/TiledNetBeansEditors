@@ -24,9 +24,9 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.lang.Math.min;
+import java.util.Collections;
 
 /**
  * Collections of utility methods used for editor tiling.
@@ -38,6 +38,17 @@ public class TileUtilities {
     public static final String EDITOR_MODE_NAME_FORMAT = "editor_r%dc%d";
     public static final int MAX_TILE_ROW_COUNT = 16;
     public static final int MAX_TILE_COLUMN_COUNT = 16;
+    
+    
+    /**
+     * Get default implementation of {@link Tileable}. Had to be moved here from
+     * the Tileable interface, because Java 7 doesn't support static methods in
+     * interfaces.
+     * @return 
+     */
+    public static Tileable getDefault() {
+        return new TileableImpl();
+    }
 
     /**
      * Opens a top component in a mode of kind "editor" at the given row and column.
@@ -98,11 +109,15 @@ public class TileUtilities {
      * @return The list of opened top components.
      */
     public static List<TopComponent> findOpenEditorWindows() {
-        return findOpenEditorWindows((win1, win2) -> {
-            String name1 = win1.getDisplayName();
-            String name2 = win2.getDisplayName();
-            return (name1 != null ? name1 : "").compareTo(name2 != null ? name2 : "");
-        });
+        return findOpenEditorWindows((new Comparator<TopComponent>() {
+            @Override
+            public int compare(TopComponent win1, TopComponent win2) {
+                String name1 = win1.getDisplayName();
+                String name2 = win2.getDisplayName();
+                return (name1 != null ? name1 : "").compareTo(name2 != null ? name2 : "");
+            }
+            })
+        );
     }
 
     /**
@@ -111,14 +126,17 @@ public class TileUtilities {
      * @return The list of opened top components.
      */
     public static List<TopComponent> findOpenEditorWindows(Comparator<TopComponent> comparator) {
-        ArrayList<TopComponent> editorWindows = new ArrayList<>();
         Set<TopComponent> openedWindows = WindowManager.getDefault().getRegistry().getOpened();
-        editorWindows.addAll(openedWindows
-                                     .stream()
-                                     .filter(topComponent -> WindowManager.getDefault().isEditorTopComponent(topComponent))
-                                     .collect(Collectors.toList()));
+        ArrayList<TopComponent> editorWindows = new ArrayList<>(openedWindows.size());
+        WindowManager wm = WindowManager.getDefault();
+        for (TopComponent openedWindow : openedWindows) {
+            if (wm.isEditorTopComponent(openedWindow)) {
+                editorWindows.add(openedWindow);
+            }
+        }
+        
         if (comparator != null) {
-            editorWindows.sort(comparator);
+            Collections.sort(editorWindows, comparator);
         }
         return editorWindows;
     }
